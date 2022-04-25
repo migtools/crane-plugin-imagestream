@@ -53,34 +53,20 @@ jobs:
         with:
           repository: ${{ github.repository_owner }}/crane-plugins
           token: ${{ secrets.PLUGIN_RELEASE }}
+          path: crane-plugins
+
+      - name: setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
 
       - name: Updating index file and adding manifest
+        shell: bash
         run: |
-          cat << EOF >> index.yml
-          ImagestreamPlugin-${{ github.event.inputs.version }}: https://github.com/${{ github.repository_owner }}/crane-plugins/raw/main/plugins/Imagestream/ImagestreamPlugin-${{ github.event.inputs.version }}.yml
-          EOF
-          mkdir -p plugins/Imagestream
-          cat << EOF >> plugins/Imagestream/ImagestreamPlugin-${{ github.event.inputs.version }}.yml
-          name: ImagestreamPlugin
-          shortDescription: ImagestreamPlugin
-          description: this is ImagestreamPlugin
-          version: ${{ github.event.inputs.version }}
-          binaries:
-            - os: linux
-              arch: amd64
-              uri: https://github.com/${{ github.repository }}/releases/download/${{ github.event.inputs.version }}/amd64-linux-imagestreamplugin-${{ github.event.inputs.version }}
-            - os: darwin
-              arch: amd64
-              uri: https://github.com/${{ github.repository }}/releases/download/${{ github.event.inputs.version }}/amd64-darwin-imagestreamplugin-${{ github.event.inputs.version }}
-            - os: darwin
-              arch: arm64
-              uri: https://github.com/${{ github.repository }}/releases/download/${{ github.event.inputs.version }}/arm64-darwin-imagestreamplugin-${{ github.event.inputs.version }}
-          optionalFields:
-            - flagName: "src-internal-registry"
-              help:     "Internal registry hostname[:port] used to determine whether an istag references a local image"
-              example:  "image-registry.openshift-image-registry.svc:5000"
-          EOF
-
+          pip install pyyaml
+          cd crane-plugins
+          python ~/work/${{ github.event.repository.name }}/${{ github.event.repository.name }}/main/.github/workflows/script.py "${{ github.event.inputs.version }}" "${{ github.repository_owner }}" "${{ github.repository }}"
+     
       - name: Create Pull Request against crane-plugins
         uses: peter-evans/create-pull-request@v3
         with:
@@ -88,5 +74,6 @@ jobs:
           commit-message: Updating index and adding manifest from imagestream plugin release
           title: Adding imagestream plugin from release ${{ github.event.inputs.version }}
           body: Update index and add manifest to include version ${{ github.event.inputs.version }} of imagestream plugin
-          branch: ImagestreamPlugin
+          branch: ImageStreamPlugin
           base: main
+          path: crane-plugins
