@@ -16,9 +16,10 @@ import (
 var logger logrus.FieldLogger
 
 const (
-	Version = "v0.0.1"
+	Version = "v0.0.2"
 	// flags
-	SrcInternalRegistry = "src-internal-registry"
+	SrcInternalRegistryFlag = "src-internal-registry"
+	DefaultInternalRegistry = "image-registry.openshift-image-registry.svc:5000"
 
 	removeAnnotationsOp = `[
 { "op": "remove", "path": "/tag/annotations"}
@@ -29,7 +30,7 @@ func main() {
 	logger = logrus.New()
 	fields := []transform.OptionalFields{
 		{
-			FlagName: SrcInternalRegistry,
+			FlagName: SrcInternalRegistryFlag,
 			Help:     "Internal registry hostname[:port] used to determine whether an istag references a local image",
 			Example:  "image-registry.openshift-image-registry.svc:5000",
 		},
@@ -42,11 +43,16 @@ type imagestreamOptionalFields struct {
 }
 
 func getOptionalFields(extras map[string]string) (imagestreamOptionalFields, error) {
-	var fields imagestreamOptionalFields
-	fields.SrcInternalRegistry = extras[SrcInternalRegistry]
-	return fields, nil
-}
+	// Use default if not provided
+	internalRegistry := DefaultInternalRegistry
+	if registry, ok := extras[SrcInternalRegistryFlag]; ok {
+		internalRegistry = registry
+	}
 
+	return imagestreamOptionalFields{
+		SrcInternalRegistry: internalRegistry,
+	}, nil
+}
 
 func Run(request transform.PluginRequest) (transform.PluginResponse, error) {
 	u := request.Unstructured
@@ -65,7 +71,7 @@ func Run(request transform.PluginRequest) (transform.PluginResponse, error) {
 		logger.Info("found ImageTag, adding to whiteout")
 		whiteOut = true
 	case "ImageStreamTag":
-		logger.Info("found ImageStreamTag, processing")	
+		logger.Info("found ImageStreamTag, processing")
 		whiteOut, patch, err = processISTag(u, inputFields)
 	}
 	if err != nil {
