@@ -65,9 +65,9 @@ if os.path.exists('plugins/ImageStream/index.yaml'):
         ],
         'optionalFields': [
             { 
-                'flagName': "registry-replacement",
-                'help':     "Map of image registry paths to swap on transform, in the format original-registry1=target-registry1,original-registry2=target-registry2...",
-                'example':  "docker-registry.default.svc:5000=image-registry.openshift-image-registry.svc:5000,docker.io/foo=quay.io/bar",
+                'flagName': "src-internal-registry",
+                'help':     "Internal registry hostname[:port] used to determine whether an istag references a local image",
+                'example':  "image-registry.openshift-image-registry.svc:5000",
             },
         ]
     }
